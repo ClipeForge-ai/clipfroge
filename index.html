@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clipforge — clip your videos into shorts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0E0F12;--panel:#16181D;--line:#2A2D33;--soft:#23262D;--text:#ECEDEF;--muted:#B4B7BE;--dim:#8E929A;--lime:#C6F432}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0}
+a{color:var(--lime)}
+button,input,select{font:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px}
+.btn{border:0;border-radius:999px;padding:11px 18px;min-height:44px;font-weight:600;cursor:pointer;background:var(--soft);color:var(--text)}
+.btn:hover{background:#2E323A}
+.btn.primary{background:var(--lime);color:var(--bg)}
+.btn.primary:hover{background:#D7FF5C}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:7px 12px;min-height:36px;font-size:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+.hero{padding:28px 0 20px;display:flex;flex-direction:column;gap:10px}
+.hero h1{font-size:clamp(32px,5vw,52px);line-height:1.05;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--muted);font-size:17px;max-width:680px}
+.start{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:16px 0 28px}
+.drop{border:2px dashed #3A3D44;border-radius:16px;padding:32px 20px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;min-height:200px}
+.drop.over{border-color:var(--lime);background:#1B1E15}
+.drop small,.note{color:var(--dim);font-size:13px}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+input[type=text],input[type=url],select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;min-height:44px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.msg{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:14px;margin-top:12px}
+#studio{display:none;flex-direction:column;gap:16px;margin-bottom:40px}
+.grid{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.side{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:12px}
+video{width:100%;max-height:60vh;background:#000;border-radius:12px;display:block}
+.timeline{position:relative;height:44px;background:var(--soft);border-radius:8px;overflow:hidden;cursor:pointer}
+#energy{position:absolute;inset:0;width:100%;height:100%}
+.seg{position:absolute;top:0;bottom:0;background:rgba(198,244,50,.35);border-left:2px solid var(--lime);border-right:2px solid var(--lime)}
+.head{position:absolute;top:0;bottom:0;width:2px;background:#fff}
+.previewBox{display:flex;justify-content:center;background:var(--bg);border-radius:12px;padding:12px}
+#preview{background:#000;border-radius:8px;max-width:100%;max-height:340px}
+input[type=range]{width:100%;accent-color:var(--lime)}
+.clip{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+.clip .t{font-family:'Space Grotesk',sans-serif;font-weight:700;min-width:70px}
+.clip input{width:84px}
+.clip .grow{flex:1 1 auto}
+.bar{height:6px;background:var(--soft);border-radius:999px;overflow:hidden;flex:1 1 120px}
+.bar i{display:block;height:100%;width:0;background:var(--lime)}
+.result{display:flex;gap:12px;align-items:center;flex-wrap:wrap;width:100%}
+.result video{width:120px;max-height:none}
+.tag{font-size:12px;color:var(--lime);font-weight:600}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:8px 0 48px}
+.steps div{border-top:2px solid var(--lime);padding-top:14px}
+.steps p{margin:6px 0 0;color:var(--muted)}
+footer{border-top:1px solid var(--line);color:var(--dim);font-size:13px;padding:20px 0}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="logo"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="3" width="22" height="22" rx="6" fill="none" stroke="#C6F432" stroke-width="2.5"/><path d="M11 9l8 5-8 5z" fill="#C6F432"/></svg>Clipforge</div>
+<span class="note">Files are deleted automatically after 1 hour</span>
+</header>
+
+<section class="hero">
+<span class="tag">AI-ASSISTED CLIPPING</span>
+<h1>Turn one long video into vertical shorts.</h1>
+<p>Upload a video, let Clipforge suggest the liveliest moments, adjust them, then export 9:16 clips ready for Shorts, Reels and TikTok.</p>
+</section>
+
+<section class="start" id="start">
+<div class="panel">
+<div class="drop" id="drop">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C6F432" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+<h3>Drop your video here</h3>
+<label class="btn primary" for="file" style="margin:0;color:var(--bg);display:inline-flex;align-items:center">Choose video file</label>
+<input class="sr" type="file" id="file" accept="video/*">
+<small>MP4, MOV or WebM from your phone or computer</small>
+</div>
+</div>
+<div class="panel">
+<form id="ytForm">
+<label for="yt">Paste a video link (YouTube and more)</label>
+<div class="row"><input type="url" id="yt" placeholder="https://youtu.be/..." style="flex:1 1 200px"><button class="btn primary" type="submit" id="ytBtn">Get video</button></div>
+</form>
+<div class="bar" id="ytBar" style="margin-top:12px;display:none"><i id="ytFill"></i></div>
+<div class="msg" id="ytMsg">Only clip videos you own or have permission to use.</div>
+</div>
+</section>
+
+<section id="studio">
+<div class="row" style="justify-content:space-between">
+<h2 id="fname" style="font-size:22px;overflow-wrap:anywhere"></h2>
+<button class="btn sm" id="newVid" type="button">Load another video</button>
+</div>
+<div class="grid">
+<div class="main panel">
+<video id="vid" controls playsinline></video>
+<div class="timeline" id="tl" aria-label="Timeline: click to seek"><canvas id="energy"></canvas><div id="segs"></div><div class="head" id="head"></div></div>
+<div class="row">
+<button class="btn sm" id="markIn" type="button">Set start</button>
+<button class="btn sm" id="markOut" type="button">Set end &amp; add clip</button>
+<span class="note" id="inInfo">Start: —</span>
+<span style="flex:1"></span>
+<button class="btn sm primary" id="suggest" type="button">Suggest highlights</button>
+</div>
+<div class="note" id="status">Analyzing audio to find lively moments…</div>
+</div>
+<div class="side panel">
+<h3 style="font-size:17px">Format</h3>
+<div><label for="fmt">Shape</label>
+<select id="fmt"><option value="9:16">Vertical 9:16 (Shorts, Reels, TikTok)</option><option value="1:1">Square 1:1</option><option value="16:9">Wide 16:9</option></select></div>
+<div><label for="pos">Crop position (left ↔ right)</label><input type="range" id="pos" min="0" max="100" value="50"></div>
+<div><label for="cap">Hook text on clip (uploaded files only)</label><input type="text" id="cap" placeholder="e.g. Nobody talks about this…" maxlength="80"></div>
+<div class="row"><label for="len" style="margin:0">Suggested clip length</label>
+<select id="len" style="width:auto"><option value="15">15 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">60 s</option></select></div>
+<div class="previewBox"><canvas id="preview" width="180" height="320"></canvas></div>
+</div>
+</div>
+<div class="panel" style="display:flex;flex-direction:column;gap:10px">
+<div class="row" style="justify-content:space-between"><h3 style="font-size:17px">Clips</h3><span class="note">Export plays the clip in real time — keep this tab open and visible.</span></div>
+<div id="clips" style="display:flex;flex-direction:column;gap:10px"></div>
+<div class="note" id="noClips">No clips yet. Use “Suggest highlights” or mark a start and end on the video.</div>
+</div>
+</section>
+
+<section class="steps">
+<div><h3>1. Upload</h3><p>Pick a podcast, stream, vlog or tutorial file. Nothing is uploaded to a server.</p></div>
+<div><h3>2. Pick moments</h3><p>Clipforge scores the audio for energy and suggests clips. Adjust or add your own.</p></div>
+<div><h3>3. Export</h3><p>Crop to vertical, add a hook line and save each clip as a video file.</p></div>
+</section>
+</div>
+<footer><div class="wrap">© 2026 Clipforge · Highlight suggestions are based on audio loudness, not speech understanding. Add captions in a free tool like CapCut.</div></footer>
+
+<canvas id="out" style="display:none"></canvas>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const vid=$('vid'),prev=$('preview'),pctx=prev.getContext('2d'),out=$('out'),octx=out.getContext('2d');
+let fileName='clip',energy=null,clips=[],inTime=null,busy=false,audioCtx=null,streamDest=null,nextId=1,sourceId=null;
+
+const fmt=s=>{s=Math.max(0,s||0);const m=Math.floor(s/60),x=Math.floor(s%60);return m+':'+String(x).padStart(2,'0');};
+const parse=t=>{t=String(t).trim();if(!t)return NaN;if(t.includes(':')){const p=t.split(':').map(Number);return p.reduce((a,b)=>a*60+b,0);}return Number(t);};
+
+// ---------- loading ----------
+const drop=$('drop');
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0];if(f)load(f);});
+$('file').addEventListener('change',e=>{const f=e.target.files[0];if(f)load(f);});
+$('newVid').addEventListener('click',()=>{if(busy)return;vid.pause();$('file').value='';$('studio').style.display='none';$('start').style.display='grid';});
+$('ytForm').addEventListener('submit',async e=>{e.preventDefault();
+ const url=$('yt').value.trim(),msg=$('ytMsg'),btnEl=$('ytBtn');if(!url){msg.textContent='Paste a link first.';return;}
+ btnEl.disabled=true;$('ytBar').style.display='block';$('ytFill').style.width='0';msg.textContent='Starting download…';
+ try{
+  const r=await fetch('/api/fetch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Could not start');
+  while(true){
+   await new Promise(res=>setTimeout(res,1000));
+   const s=await (await fetch('/api/status/'+j.id)).json();
+   if(s.status==='error')throw new Error(s.error||'Download failed');
+   $('ytFill').style.width=(s.progress||0)+'%';
+   msg.textContent=s.status==='downloading'?'Downloading'+(s.title?' “'+s.title+'”':'')+'… '+Math.round(s.progress||0)+'%':'Finding highlights…';
+   if(s.status==='ready'){loadRemote(j.id,s.title||'video',s.energy);break;}
+  }
+  msg.textContent='Only clip videos you own or have permission to use.';
+ }catch(err){msg.textContent='Couldn’t get that video: '+err.message+' — YouTube sometimes blocks servers. Try again later, or upload the video file instead.';}
+ finally{btnEl.disabled=false;$('ytBar').style.display='none';}
+});
+function loadRemote(id,title,en){
+ sourceId=id;fileName=title.replace(/[^\w-]+/g,'_').slice(0,40)||'clip';$('fname').textContent=title;
+ if(vid.src.startsWith('blob:'))URL.revokeObjectURL(vid.src);
+ vid.src='/video/'+id;clips=[];energy=null;inTime=null;renderClips();$('inInfo').textContent='Start: —';
+ $('studio').style.display='flex';$('start').style.display='none';$('studio').scrollIntoView({behavior:'smooth'});
+ vid.addEventListener('loadedmetadata',()=>{drawPreview();energy=Float32Array.from(en||[]);drawTimeline();
+  if(energy.length){$('suggest').disabled=false;suggest();}else alertMsg('No audio found — mark clips by hand.');},{once:true});
+}
+
+function load(f){
+ sourceId=null;
+ if(!f.type.startsWith('video/')&&!/\.(mp4|mov|webm|mkv|m4v)$/i.test(f.name)){alertMsg('That file isn’t a video.');return;}
+ fileName=f.name.replace(/\.[^.]+$/,'').replace(/[^\w-]+/g,'_').slice(0,40)||'clip';
+ $('fname').textContent=f.name;
+ if(vid.src)URL.revokeObjectURL(vid.src);
+ vid.src=URL.createObjectURL(f);
+ clips=[];energy=null;inTime=null;renderClips();$('inInfo').textContent='Start: —';
+ $('studio').style.display='flex';$('start').style.display='none';
+ $('studio').scrollIntoView({behavior:'smooth'});
+ vid.addEventListener('loadedmetadata',()=>{drawPreview();drawTimeline();analyze(f);},{once:true});
+}
+function alertMsg(t){$('status').textContent=t;}
+
+// ---------- audio analysis ----------
+async function analyze(f){
+ alertMsg('Analyzing audio to find lively moments…');$('suggest').disabled=true;
+ try{
+  if(f.size>900*1024*1024)throw new Error('big');
+  const buf=await f.arrayBuffer();
+  const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  const ac=new OAC(1,1,8000);
+  const ab=await ac.decodeAudioData(buf);
+  const sr=ab.sampleRate,ch=ab.numberOfChannels,n=ab.length,secs=Math.floor(n/sr);
+  const e=new Float32Array(secs);
+  const data=[];for(let c=0;c<ch;c++)data.push(ab.getChannelData(c));
+  for(let s=0;s<secs;s++){let sum=0;const a=s*sr,b=a+sr;for(let i=a;i<b;i+=4){let v=0;for(let c=0;c<ch;c++)v+=data[c][i];v/=ch;sum+=v*v;}e[s]=Math.sqrt(sum/(sr/4));}
+  energy=e;drawTimeline();
+  alertMsg('Ready. Click “Suggest highlights”, or mark your own clips.');
+  $('suggest').disabled=false;
+  if(!clips.length)suggest();
+ }catch(err){
+  energy=null;drawTimeline();
+  alertMsg('Couldn’t read this video’s audio for suggestions (very large file or unsupported audio). You can still mark clips by hand.');
+ }
+}
+function suggest(){
+ if(!energy){return;}
+ const L=Math.min(Number($('len').value),Math.floor(vid.duration||energy.length));
+ const N=energy.length;if(N<L){addClip(0,N,'Highlight');return;}
+ const mean=energy.reduce((a,b)=>a+b,0)/N||1e-6;
+ // window score: avg energy + variation (lively speech/laughter) — prefix sums
+ const ps=new Float64Array(N+1),pd=new Float64Array(N+1);
+ for(let i=0;i<N;i++){ps[i+1]=ps[i]+energy[i];pd[i+1]=pd[i]+(i?Math.abs(energy[i]-energy[i-1]):0);}
+ const scores=[];for(let s=0;s+L<=N;s++)scores.push({s,v:(ps[s+L]-ps[s])/L/mean+0.6*(pd[s+L]-pd[s])/L/mean});
+ scores.sort((a,b)=>b.v-a.v);
+ const want=Math.max(1,Math.min(6,Math.floor(N/(L*3))||1)),picked=[];
+ for(const c of scores){if(picked.length>=want)break;if(picked.every(p=>Math.abs(p.s-c.s)>=L))picked.push(c);}
+ clips=clips.filter(c=>!c.auto);
+ picked.sort((a,b)=>a.s-b.s).forEach((p,i)=>addClip(p.s,p.s+L,'Highlight',true));
+ alertMsg(picked.length+' highlight'+(picked.length>1?'s':'')+' suggested. Preview them, adjust the times, then export.');
+}
+$('suggest').addEventListener('click',suggest);
+$('len').addEventListener('change',()=>{if(energy&&clips.some(c=>c.auto))suggest();});
+
+// ---------- timeline ----------
+function drawTimeline(){
+ const cv=$('energy'),r=cv.getBoundingClientRect(),w=Math.max(1,Math.round(r.width)),h=44;cv.width=w;cv.height=h;
+ const c=cv.getContext('2d');c.clearRect(0,0,w,h);
+ if(energy){const max=Math.max(...energy)||1;c.fillStyle='#4A4F58';for(let x=0;x<w;x++){const i=Math.floor(x/w*energy.length);const v=energy[i]/max;const bh=Math.max(1,v*(h-6));c.fillRect(x,(h-bh)/2,1,bh);}}
+ const segs=$('segs');segs.textContent='';const d=vid.duration||1;
+ clips.forEach(cl=>{const s=document.createElement('div');s.className='seg';s.style.left=(cl.start/d*100)+'%';s.style.width=((cl.end-cl.start)/d*100)+'%';segs.appendChild(s);});
+}
+window.addEventListener('resize',drawTimeline);
+$('tl').addEventListener('click',e=>{if(busy||!vid.duration)return;const r=$('tl').getBoundingClientRect();vid.currentTime=(e.clientX-r.left)/r.width*vid.duration;});
+function updHead(){if(vid.duration)$('head').style.left=(vid.currentTime/vid.duration*100)+'%';}
+
+// ---------- crop + preview ----------
+function dims(){const f=$('fmt').value;return f==='9:16'?[720,1280]:f==='1:1'?[1080,1080]:[1280,720];}
+function drawFrame(ctx,W,H){
+ const vw=vid.videoWidth,vh=vid.videoHeight;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);if(!vw)return;
+ const r=W/H,pos=Number($('pos').value)/100;let sx,sy,cw,ch;
+ if(vw/vh>r){ch=vh;cw=vh*r;sx=(vw-cw)*pos;sy=0;}else{cw=vw;ch=vw/r;sx=0;sy=(vh-ch)/2;}
+ ctx.drawImage(vid,sx,sy,cw,ch,0,0,W,H);
+ const t=$('cap').value.trim();if(t)drawCaption(ctx,t,W,H);
+}
+function drawCaption(ctx,t,W,H){
+ const fs=Math.round(W*0.065);ctx.font='700 '+fs+'px "Space Grotesk", Inter, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ const words=t.split(/\s+/),lines=[];let line='';const maxW=W*0.84;
+ for(const w of words){const test=line?line+' '+w:w;if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}else line=test;}if(line)lines.push(line);
+ const lh=fs*1.25,y0=H*0.16-(lines.length-1)*lh/2;
+ lines.forEach((l,i)=>{const y=y0+i*lh,tw=ctx.measureText(l).width;ctx.fillStyle='rgba(0,0,0,.72)';const p=fs*0.35;roundRect(ctx,W/2-tw/2-p,y-lh/2,tw+2*p,lh,fs*0.25);ctx.fillStyle='#fff';ctx.fillText(l,W/2,y+1);});
+}
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();c.fill();}
+function drawPreview(){const [W,H]=dims();const s=Math.min(180/W,320/H)*(H>W?1:1.6);prev.width=Math.round(W*s);prev.height=Math.round(H*s);drawFrame(pctx,prev.width,prev.height);}
+['input','change'].forEach(ev=>{$('pos').addEventListener(ev,drawPreview);$('fmt').addEventListener(ev,drawPreview);$('cap').addEventListener(ev,drawPreview);});
+vid.addEventListener('seeked',()=>{drawPreview();updHead();});
+vid.addEventListener('timeupdate',updHead);
+(function loop(){if(!vid.paused&&!busy)drawPreview();updHead();requestAnimationFrame(loop);})();
+
+// ---------- clips ----------
+$('markIn').addEventListener('click',()=>{inTime=vid.currentTime;$('inInfo').textContent='Start: '+fmt(inTime);});
+$('markOut').addEventListener('click',()=>{const t=vid.currentTime;if(inTime===null){$('inInfo').textContent='Set a start first';return;}
+ const a=Math.min(inTime,t),b=Math.max(inTime,t);if(b-a<1){$('inInfo').textContent='Clip must be at least 1 second';return;}
+ addClip(a,b,'Clip');inTime=null;$('inInfo').textContent='Start: —';});
+function addClip(a,b,label,auto){clips.push({id:nextId++,start:a,end:b,label,auto:!!auto,result:null});clips.sort((x,y)=>x.start-y.start);renderClips();}
+function renderClips(){
+ const box=$('clips');box.textContent='';$('noClips').style.display=clips.length?'none':'block';
+ clips.forEach((c,i)=>{
+  const el=document.createElement('div');el.className='clip';
+  const t=document.createElement('span');t.className='t';t.textContent='#'+(i+1);
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=c.auto?'Suggested':'Manual';
+  const si=document.createElement('input');si.type='text';si.value=fmt(c.start);si.setAttribute('aria-label','Start time');
+  const ei=document.createElement('input');ei.type='text';ei.value=fmt(c.end);ei.setAttribute('aria-label','End time');
+  const len=document.createElement('span');len.className='note';len.textContent=Math.round(c.end-c.start)+' s';
+  const upd=()=>{const a=parse(si.value),b=parse(ei.value);if(isFinite(a)&&isFinite(b)&&b-a>=1&&a>=0&&b<=(vid.duration||1e9)){c.start=a;c.end=b;c.result=null;len.textContent=Math.round(b-a)+' s';drawTimeline();}else{si.value=fmt(c.start);ei.value=fmt(c.end);}};
+  si.addEventListener('change',upd);ei.addEventListener('change',upd);
+  const dash=document.createElement('span');dash.textContent='–';dash.className='note';
+  const play=btn('Preview',()=>previewClip(c));
+  const ex=btn('Export',()=>exportClip(c,el),true);
+  const del=btn('Remove',()=>{if(busy)return;clips=clips.filter(x=>x!==c);renderClips();});
+  const grow=document.createElement('span');grow.className='grow';
+  el.append(t,tag,si,dash,ei,len,grow,play,ex,del);
+  const res=document.createElement('div');res.className='result';res.dataset.r='1';el.appendChild(res);
+  if(c.result)showResult(c,res);
+  box.appendChild(el);
+ });
+ drawTimeline();
+}
+function btn(txt,fn,primary){const b=document.createElement('button');b.type='button';b.className='btn sm'+(primary?' primary':'');b.textContent=txt;b.addEventListener('click',fn);return b;}
+let stopAt=null;
+function previewClip(c){if(busy)return;stopAt=c.end;vid.currentTime=c.start;vid.play().catch(()=>{});}
+vid.addEventListener('timeupdate',()=>{if(stopAt!==null&&!busy&&vid.currentTime>=stopAt){vid.pause();stopAt=null;}});
+
+// ---------- export ----------
+function pickMime(){const opts=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+ for(const m of opts){try{if(MediaRecorder.isTypeSupported(m))return m;}catch(e){}}return '';}
+async function exportClip(c,el){
+ if(busy)return;
+ if(sourceId)return exportRemote(c,el);if(!window.MediaRecorder||!out.captureStream){alertMsg('This browser can’t export video. Try Chrome or Edge on a computer.');return;}
+ busy=true;document.querySelectorAll('#clips button,#suggest,#newVid').forEach(b=>b.disabled=true);
+ const res=el.querySelector('[data-r]');res.textContent='';
+ const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('i');bar.appendChild(fill);
+ const lab=document.createElement('span');lab.className='note';lab.textContent='Exporting… 0%';res.append(bar,lab);
+ try{
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();const src=audioCtx.createMediaElementSource(vid);streamDest=audioCtx.createMediaStreamDestination();src.connect(streamDest);src.connect(audioCtx.destination);}
+  await audioCtx.resume();
+  const [W,H]=dims();out.width=W;out.height=H;
+  const vs=out.captureStream(30);const tracks=[...vs.getVideoTracks(),...streamDest.stream.getAudioTracks()];
+  const mime=pickMime();const rec=new MediaRecorder(new MediaStream(tracks),mime?{mimeType:mime,videoBitsPerSecond:6e6}:{});
+  const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+  const done=new Promise(r=>rec.onstop=r);
+  vid.pause();vid.muted=false;vid.controls=false;
+  await new Promise(r=>{vid.addEventListener('seeked',r,{once:true});vid.currentTime=c.start;});
+  drawFrame(octx,W,H);rec.start(250);await vid.play();
+  await new Promise(r=>{(function step(){drawFrame(octx,W,H);const p=Math.min(1,(vid.currentTime-c.start)/(c.end-c.start));fill.style.width=(p*100)+'%';lab.textContent='Exporting… '+Math.round(p*100)+'%';
+   if(vid.currentTime>=c.end||vid.ended||vid.paused&&vid.currentTime>c.start+0.2){r();return;}requestAnimationFrame(step);})();});
+  vid.pause();rec.stop();await done;vs.getTracks().forEach(t=>t.stop());
+  const type=(rec.mimeType||mime||'video/webm');const ext=type.includes('mp4')?'mp4':'webm';
+  c.result={blob:new Blob(chunks,{type:type.split(';')[0]}),ext};
+  showResult(c,res);
+ }catch(err){res.textContent='';const m=document.createElement('span');m.className='note';m.textContent='Export failed: '+(err&&err.message||err);res.appendChild(m);}
+ finally{vid.controls=true;busy=false;document.querySelectorAll('#clips button,#suggest,#newVid').forEach(b=>b.disabled=false);if(!energy)$('suggest').disabled=true;}
+}
+async function exportRemote(c,el){
+ busy=true;document.querySelectorAll('#clips button,#suggest,#newVid').forEach(b=>b.disabled=true);
+ const res=el.querySelector('[data-r]');res.textContent='';
+ const lab=document.createElement('span');lab.className='note';lab.textContent='Cutting clip… (a few seconds)';res.appendChild(lab);
+ try{
+  const r=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id:sourceId,start:c.start,end:c.end,fmt:$('fmt').value,pos:Number($('pos').value)/100})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Export failed');
+  c.result={url:j.url,name:j.name,ext:'mp4'};showResult(c,res);
+ }catch(err){lab.textContent='Export failed: '+err.message;}
+ finally{busy=false;document.querySelectorAll('#clips button,#suggest,#newVid').forEach(b=>b.disabled=false);}
+}
+function showResult(c,res){
+ res.textContent='';const v=document.createElement('video');v.controls=true;v.playsInline=true;
+ const info=document.createElement('span');info.className='note';
+ const a=document.createElement('a');a.className='btn sm primary';a.style.textDecoration='none';a.style.color='var(--bg)';
+ if(c.result.url){v.src=c.result.url;a.href=c.result.url;a.download=c.result.name;info.textContent='MP4 · download now — deleted after 1 hour';}
+ else{const u=URL.createObjectURL(c.result.blob);v.src=u;a.href=u;a.download=fileName+'_clip'+(clips.indexOf(c)+1)+'.'+c.result.ext;
+  info.textContent=(c.result.blob.size/1048576).toFixed(1)+' MB · '+c.result.ext.toUpperCase();}
+ a.textContent='Download';
+ res.append(v,info,a);
+}
+})();
+</script>
+</body>
+</html>
